@@ -12,6 +12,27 @@ Bridges the Huum controller (TCP 6969) to a Home Assistant `climate` entity via
 MQTT Discovery, with heating state derived from the controller's own reports.
 See [huum_mqtt/DOCS.md](./huum_mqtt/DOCS.md).
 
+## Screenshots
+
+The add-on creates a single Home Assistant device (via MQTT Discovery) with a
+climate entity, a session-duration control and a session-end sensor:
+
+![MQTT device in Home Assistant](docs/MQTT%20device.png)
+
+The climate entity is a standard thermostat card — current temperature, setpoint
+and on/off:
+
+<img src="docs/Climate%20control.png" alt="Home Assistant climate card" width="420">
+
+Being a native HA climate entity, it also surfaces through the HomeKit bridge in
+the Apple Home app:
+
+<p>
+  <img src="docs/Homekit%20room.jpeg" alt="Sauna in the Apple Home app" width="250">
+  &nbsp;&nbsp;
+  <img src="docs/Homekit%20control.jpeg" alt="Thermostat control in the Apple Home app" width="250">
+</p>
+
 ## Install
 
 In Home Assistant: **Settings → Add-ons → Add-on Store → ⋮ → Repositories**, add:
