@@ -28,6 +28,21 @@ and blocking the cloud MQTT port) are in [docs/SETUP.md](./docs/SETUP.md).
 - [docs/SETUP.md](./docs/SETUP.md) – network setup for local control
 - [docs/PLAN.md](./docs/PLAN.md) – reverse-engineered protocol + architecture
 
+## Credits
+
+This builds directly on prior reverse-engineering of the Huum controller:
+
+- **[kpalang/huum-controller](https://github.com/kpalang/huum-controller)** by
+  Kaur Palang — the original local controller and protocol work
+  ([write-up](https://kaurpalang.com/posts/invading-the-sauna/)). The message
+  formats and framing here were derived from that project plus our own captures.
+- **[weidi/ha-addons](https://github.com/weidi/ha-addons)** by weidi — packaged
+  kpalang's controller as a Home Assistant add-on, which informed this add-on's
+  structure.
+
+This project reimplements the bridge from scratch in Python to add MQTT
+Discovery and heater state, but would not exist without their work.
+
 ## Development
 
 ```bash
