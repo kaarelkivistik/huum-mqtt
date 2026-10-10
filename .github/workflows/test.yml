@@ -1,0 +1,32 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install mosquitto (for the integration test)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mosquitto
+          # Ensure the broker binary is on PATH for the test discovery.
+          command -v mosquitto || sudo ln -s /usr/sbin/mosquitto /usr/local/bin/mosquitto
+          mosquitto --help | head -1
+
+      - name: Install dependencies
+        working-directory: huum_mqtt
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        working-directory: huum_mqtt
+        run: python -m unittest discover -s test -v

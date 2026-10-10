@@ -1,0 +1,34 @@
+name: "Huum MQTT"
+version: "0.1.0"
+slug: "huum_mqtt"
+description: "Local Huum sauna control via MQTT Discovery (climate entity, no cloud)"
+url: "https://github.com/kaarelkivistik/huum-mqtt/tree/main/huum_mqtt"
+arch:
+  - aarch64
+  - amd64
+startup: services
+boot: auto
+init: false
+host_network: false
+ports:
+  6969/tcp: 6969
+ports_description:
+  6969/tcp: "Huum controller legacy plaintext channel (api.huum.eu must resolve here)"
+services:
+  - "mqtt:need"
+options:
+  update_frequency: 60
+  min_temp: 40
+  max_temp: 110
+  default_target: 70
+  default_duration_hours: 3
+  max_duration_hours: 12
+  debug: false
+schema:
+  update_frequency: "int(0,255)"
+  min_temp: "int(20,110)"
+  max_temp: "int(20,150)"
+  default_target: "int(20,150)"
+  default_duration_hours: "int(1,24)"
+  max_duration_hours: "int(1,24)"
+  debug: "bool"
