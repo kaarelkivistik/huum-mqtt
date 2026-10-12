@@ -8,6 +8,7 @@ export MAX_TEMP="$(bashio::config 'max_temp')"
 export DEFAULT_TARGET="$(bashio::config 'default_target')"
 export DEFAULT_DURATION_HOURS="$(bashio::config 'default_duration_hours')"
 export MAX_DURATION_HOURS="$(bashio::config 'max_duration_hours')"
+export OFFLINE_GRACE_SECONDS="$(bashio::config 'offline_grace_seconds')"
 
 if bashio::config.true 'debug'; then
   export DEBUG=1

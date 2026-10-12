@@ -110,11 +110,15 @@ class HuumTcpServer:
         except (ConnectionError, asyncio.IncompleteReadError) as err:
             _LOGGER.info("Controller connection error: %s", err)
         finally:
+            writer.close()
+            # A replaced connection's teardown must not mark the device offline;
+            # the newer connection is already live.
             if self._writer is writer:
                 self._writer = None
-            writer.close()
-            _LOGGER.info("Controller disconnected")
-            await self._fire(self.on_disconnect)
+                _LOGGER.info("Controller disconnected")
+                await self._fire(self.on_disconnect)
+            else:
+                _LOGGER.info("Replaced controller connection closed")
 
     async def _dispatch(self, frame: bytes) -> None:
         msg_type = frame[0]

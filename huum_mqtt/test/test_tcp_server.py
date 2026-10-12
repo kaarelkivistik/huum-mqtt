@@ -47,5 +47,60 @@ class TestTcpServer(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(got["state"].target_temperature, 71)
 
 
+    async def test_replaced_connection_does_not_fire_disconnect(self):
+        disconnects = []
+        server = HuumTcpServer(ping_frequency=60, host="127.0.0.1", port=0)
+        server.on_disconnect = lambda: disconnects.append(1)
+        await server.start()
+
+        _, w1 = await asyncio.open_connection("127.0.0.1", server.port)
+        await asyncio.sleep(0.05)
+        _, w2 = await asyncio.open_connection("127.0.0.1", server.port)
+        await asyncio.sleep(0.05)
+        self.assertEqual(disconnects, [])  # old link torn down silently
+        self.assertTrue(server.connected)
+
+        w2.close()
+        await asyncio.sleep(0.05)
+        self.assertEqual(disconnects, [1])
+        w1.close()
+
+    async def test_offline_grace(self):
+        from huum.main import wire
+        from huum.state import DeviceState
+
+        class FakeBridge:
+            duration_hours = 3
+            def __init__(self):
+                self.avail = []
+            async def publish_availability(self, online):
+                self.avail.append(online)
+            async def publish_discovery(self):
+                pass
+            async def publish_state(self):
+                pass
+
+        tcp = HuumTcpServer(ping_frequency=60, host="127.0.0.1", port=0)
+        bridge = FakeBridge()
+        wire(tcp, bridge, DeviceState(), {"target": 70}, offline_grace=0.2)
+        await tcp.start()
+
+        # Drop and reconnect within the grace period: never goes offline.
+        r, w = await asyncio.open_connection("127.0.0.1", tcp.port)
+        w.write(HANDSHAKE)
+        await r.readexactly(7)
+        w.close()
+        await asyncio.sleep(0.05)
+        r, w = await asyncio.open_connection("127.0.0.1", tcp.port)
+        w.write(HANDSHAKE)
+        await r.readexactly(7)
+        await asyncio.sleep(0.3)
+        self.assertNotIn(False, bridge.avail)
+
+        # Stay away past the grace period: goes offline.
+        w.close()
+        await asyncio.sleep(0.3)
+        self.assertEqual(bridge.avail[-1], False)
+
 if __name__ == "__main__":
     unittest.main()

@@ -26,11 +26,23 @@ def wire(
     bridge: HuumMqttBridge,
     state: DeviceState,
     desired: dict,
+    offline_grace: float = 0,
 ) -> None:
-    """Connect controller events to state+MQTT, and MQTT commands to control."""
+    """Connect controller events to state+MQTT, and MQTT commands to control.
+
+    The controller drops and re-opens its TCP connection periodically (~40 min);
+    `offline_grace` seconds of absence are tolerated before HA sees it offline.
+    """
+    pending_offline: dict[str, asyncio.Task] = {}
+
+    def cancel_pending_offline() -> None:
+        task = pending_offline.pop("task", None)
+        if task is not None:
+            task.cancel()
 
     # ---- controller -> state -> MQTT ------------------------------------- #
     async def on_handshake(hs: p.Handshake) -> None:
+        cancel_pending_offline()
         state.apply_handshake(hs)
         await bridge.publish_discovery()
         await bridge.publish_availability(True)
@@ -46,9 +58,18 @@ def wire(
             desired["target"] = s.target_temperature
         await bridge.publish_state()
 
+    async def go_offline() -> None:
+        if offline_grace:
+            await asyncio.sleep(offline_grace)
+        pending_offline.pop("task", None)
+        _LOGGER.warning("Controller offline for %ss; marking unavailable",
+                        offline_grace)
+        await bridge.publish_availability(False)
+
     async def on_disconnect() -> None:
         state.set_connected(False)
-        await bridge.publish_availability(False)
+        cancel_pending_offline()
+        pending_offline["task"] = asyncio.create_task(go_offline())
 
     tcp.on_handshake = on_handshake
     tcp.on_sensor = on_sensor
@@ -84,6 +105,7 @@ async def _run() -> None:
     default_target = _env_int("DEFAULT_TARGET", 70)
     default_duration = _env_int("DEFAULT_DURATION_HOURS", 3)
     max_duration = _env_int("MAX_DURATION_HOURS", 12)
+    offline_grace = _env_int("OFFLINE_GRACE_SECONDS", 120)
 
     state = DeviceState()
     desired = {"target": default_target}
@@ -101,7 +123,7 @@ async def _run() -> None:
         default_duration_hours=default_duration,
     )
 
-    wire(tcp, bridge, state, desired)
+    wire(tcp, bridge, state, desired, offline_grace=offline_grace)
 
     # ---- run both, restart the MQTT side on connection loss -------------- #
     async def mqtt_forever() -> None:

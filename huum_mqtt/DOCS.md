@@ -42,6 +42,7 @@ Without steps 1 and 2 the controller stays on the cloud and never connects here.
 | `default_target` | 70 | Setpoint used when turning on before one is chosen |
 | `default_duration_hours` | 3 | Heating session length sent on start |
 | `max_duration_hours` | 12 | Upper bound of the duration number entity |
+| `offline_grace_seconds` | 120 | How long the controller may be disconnected before HA marks it unavailable (it reconnects about every 40 min) |
 | `debug` | false | Verbose protocol logging |
 
 ## Entities

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+- The controller drops and re-opens its connection roughly every 40 minutes.
+  Entities no longer flap to unavailable: the device is only marked offline
+  after `offline_grace_seconds` (default 120) without a reconnect.
+- Fix a replaced controller connection marking the device offline even though
+  the new connection was already live.
+
 ## 0.1.0
 
 - Initial release.
